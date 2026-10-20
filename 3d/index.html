@@ -91,7 +91,7 @@ import * as THREE from 'three';
 const W = 720, H = 960, CX = 360;
 const FAN_TOP = 340, FAN_BOT = 700, GATE = 790, END = 940, LX = 20, RX = 700;
 const SCALE_Y0 = 195, SCALE_Y1 = 335, HALF = 26, VMAX = 300, POINTS = 100, WEIGH_T = 0.8;
-const START_LIVES = 5, TIME_RESET = 15, TAU = Math.PI * 2;
+const START_LIVES = 3, TIME_RESET = 15, TAU = Math.PI * 2;
 const LANE_COLORS = ['#3b9be0', '#f0a53a', '#5cbf5a', '#d95f93'];
 const LETTERS = 'ABCD';
 const NAMES = { nelore: 'NELORE', angus: 'ANGUS', f1: 'CRUZ. F1' };
@@ -926,7 +926,7 @@ function showMenu() {
     <p><b>📱 Incline o celular</b> para a esquerda ou direita (segure em pé).</p>
     <p class="sub">Sem sensor ou no computador: <b>arraste o dedo</b> na tela ou use <kbd>←</kbd> <kbd>→</kbd> / <b>A</b> <b>D</b>.</p>
     <p>Confira <b>raça</b> e <b>peso</b> com a placa de cada piquete. Acerto: <b>+100</b> pontos.</p>
-    <p>Você tem <b>5 vidas ❤</b>. Piquete errado, boi travado na cerca ou tempo estourado custam <b>1 vida</b>. Zerou? Rola a <b>roleta Tudo ou Nada</b> com a sua pontuação!</p>
+    <p>Você tem <b>3 vidas ❤</b>. Piquete errado, boi travado na cerca ou tempo estourado custam <b>1 vida</b>. Zerou? Rola a <b>roleta Tudo ou Nada</b> com a sua pontuação!</p>
     <button class="go" id="go">Iniciar Manejo</button>`);
   // enableTilt() é chamado primeiro, ainda dentro do clique: o iOS exige isso para liberar o sensor
   $('go').onclick = async () => {
@@ -960,7 +960,7 @@ function endPhase() {
 function showGameOver(won) {
   state = 'gameover'; sfxMoo();
   show(`<h1>${won ? 'Lote finalizado! 🏆' : 'Game Over'}</h1>
-    <p class="sub">${won ? 'Você separou o gado das 3 fases com vidas de sobra.' : 'As 5 vidas acabaram.'}</p>
+    <p class="sub">${won ? 'Você separou o gado das 3 fases com vidas de sobra.' : 'As 3 vidas acabaram.'}</p>
     <div class="stats"><div><i>${Math.round(score)}</i>pontuação final</div><div><i>${totHits}</i>acertos</div><div><i>${totErrs}</i>erros</div></div>
     <button class="go" id="go">Jogar Novamente</button>`);
   $('go').onclick = () => { ensureAudio(); resetGame(); showIntro(0); };
