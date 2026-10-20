@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>Mestre do Confinamento 3D</title>
+<title>BeefGame</title>
 <script type="importmap">
 {
   "imports": {
@@ -537,7 +537,7 @@ const sfxBuzz = () => { tone(150, 0, .28, 'sawtooth', .2); tone(105, .12, .3, 's
 const sfxPhase = () => [523, 659, 784, 1046].forEach((f, i) => tone(f, i * .12, .3));
 const sfxWin = () => [523, 659, 784, 1046, 1318, 1568].forEach((f, i) => tone(f, i * .09, .4, 'triangle', .25));
 const sfxSiren = () => { for (let i = 0; i < 8; i++) tone(i % 2 ? 620 : 900, i * .26, .26, 'square', .11); };
-const mooAudio = new Audio('../mugido.mp3');           // o arquivo fica na pasta do jogo, um nível acima de /3d
+const mooAudio = new Audio('https://beefgame.vercel.app/mugido.mp3');
 mooAudio.preload = 'auto'; mooAudio.volume = 1;
 let mooUnlocked = false;
 function unlockMoo() {                                     // celulares só liberam <audio> depois de um toque: "aquece" o mugido no primeiro gesto
@@ -914,7 +914,7 @@ function hide() { $('overlay').classList.remove('show'); }
 let controlNote = '';
 function showMenu() {
   state = 'menu'; resetGame(); phaseIdx = 0; ph = PHASES[0]; clearAnimals(); buildLayers();
-  show(`<h1>🐂 Mestre do Confinamento 3D</h1>
+  show(`<h1>🐂 BeefGame</h1>
     <p class="sub">Guie cada boi até o piquete certo antes que o tempo acabe.</p>
     <p>A câmera acompanha o boi pela manga, pela balança e até os piquetes. Você controla só o <b>desvio lateral</b>:</p>
     <p><b>📱 Incline o celular</b> para a esquerda ou direita (segure em pé).</p>
