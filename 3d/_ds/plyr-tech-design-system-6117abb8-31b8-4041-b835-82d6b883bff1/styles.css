@@ -1,0 +1,9 @@
+/* Plyr.tech Design System — global stylesheet entry point.
+   Keep this file as @import lines only; the compiler follows this closure
+   for tokens, @font-face rules, and base resets. */
+
+@import url('./tokens/colors.css');
+@import url('./tokens/typography.css');
+@import url('./tokens/spacing.css');
+@import url('./tokens/effects.css');
+@import url('./base.css');

@@ -1,0 +1,30 @@
+/* ==========================================================================
+   PLYR.TECH — ELEVATION, MOTION & BLUR TOKENS
+   Apple-inspired: soft, low-contrast shadows; short, physical easing curves;
+   restraint over spectacle.
+   ========================================================================== */
+
+:root {
+  /* Shadows — soft, diffused, dark-canvas friendly */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 24px 60px -16px rgba(0, 0, 0, 0.6);
+  --shadow-glow-brand: 0 0 0 1px color-mix(in oklab, var(--brand-500) 60%, transparent), 0 8px 32px -8px color-mix(in oklab, var(--brand-500) 45%, transparent);
+
+  /* Blur (glass surfaces — used sparingly, e.g. sticky nav) */
+  --blur-nav: saturate(160%) blur(20px); /* @kind other */
+  --blur-modal-backdrop: blur(8px); /* @kind other */
+
+  /* Motion — easing curves */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1); /* @kind other */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1); /* @kind other */
+  --ease-in-out-soft: cubic-bezier(0.45, 0, 0.55, 1); /* @kind other */
+  --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1); /* @kind other */
+
+  /* Motion — durations */
+  --duration-instant: 100ms; /* @kind other */
+  --duration-fast: 160ms; /* @kind other */
+  --duration-base: 240ms; /* @kind other */
+  --duration-slow: 420ms; /* @kind other */
+  --duration-page: 600ms; /* @kind other */
+}

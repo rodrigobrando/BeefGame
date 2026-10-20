@@ -1,0 +1,73 @@
+/* ==========================================================================
+   PLYR.TECH — COLOR TOKENS
+   Base scale generated from the brand cyan (#00C4DF) using CSS relative-color
+   syntax, plus a cool-neutral scale (charcoal, matched to the logo wordmark
+   grey) and semantic aliases used throughout components and UI kits.
+   ========================================================================== */
+
+:root {
+  /* ---- Brand cyan — base ---- */
+  --brand-500: #00c4df; /* signature color */
+  --brand-50:  oklch(from var(--brand-500) 0.97 0.020 h);
+  --brand-100: oklch(from var(--brand-500) 0.93 0.045 h);
+  --brand-200: oklch(from var(--brand-500) 0.87 0.075 h);
+  --brand-300: oklch(from var(--brand-500) 0.80 0.100 h);
+  --brand-400: oklch(from var(--brand-500) 0.72 0.120 h);
+  --brand-600: oklch(from var(--brand-500) 0.58 0.130 h);
+  --brand-700: oklch(from var(--brand-500) 0.47 0.115 h);
+  --brand-800: oklch(from var(--brand-500) 0.37 0.090 h);
+  --brand-900: oklch(from var(--brand-500) 0.28 0.065 h);
+
+  /* ---- Neutrals — cool charcoal scale (matches the logo wordmark grey) ---- */
+  --ink-950: #0a0d10;
+  --ink-900: #12161a;
+  --ink-800: #1b2126;
+  --ink-700: #2a3238;
+  --ink-600: #3d4750;
+  --ink-500: #58595c; /* logo wordmark grey */
+  --ink-400: #767c82;
+  --ink-300: #9aa1a6;
+  --ink-200: #c2c7ca;
+  --ink-100: #e2e5e6;
+  --ink-50:  #f3f4f5;
+  --ink-0:   #ffffff;
+
+  /* ---- Semantic surfaces (dark, premium software-house canvas) ---- */
+  --surface-app: var(--ink-950);
+  --surface-1: var(--ink-900);
+  --surface-2: var(--ink-800);
+  --surface-3: var(--ink-700);
+  --surface-inverse: var(--ink-0);
+  --surface-card: var(--ink-900);
+  --surface-card-hover: var(--ink-800);
+  --surface-overlay: color-mix(in oklab, var(--ink-950) 72%, transparent);
+
+  /* ---- Semantic text ---- */
+  --text-primary: var(--ink-0);
+  --text-secondary: var(--ink-300);
+  --text-tertiary: var(--ink-400);
+  --text-on-brand: var(--ink-950);
+  --text-link: var(--brand-300);
+
+  /* ---- Semantic borders ---- */
+  --border-subtle: color-mix(in oklab, var(--ink-0) 8%, transparent);
+  --border-default: color-mix(in oklab, var(--ink-0) 14%, transparent);
+  --border-strong: color-mix(in oklab, var(--ink-0) 24%, transparent);
+  --border-brand: var(--brand-500);
+
+  /* ---- Semantic accents ---- */
+  --accent-brand: var(--brand-500);
+  --accent-brand-hover: var(--brand-400);
+  --accent-brand-active: var(--brand-600);
+  --accent-success: #35c46a;
+  --accent-warning: #f0b429;
+  --accent-danger: #ff5c5c;
+  --accent-info: var(--brand-400);
+
+  /* ---- On-light variants (for light sections: docs, print, email) ---- */
+  --surface-app-light: var(--ink-0);
+  --surface-card-light: var(--ink-0);
+  --text-primary-light: var(--ink-950);
+  --text-secondary-light: var(--ink-500);
+  --border-light: var(--ink-100);
+}
