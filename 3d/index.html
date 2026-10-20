@@ -496,7 +496,7 @@ function proj(lx, ly, h) {
 
 // ---------- Sons ----------
 let actx = null;
-function ensureAudio() { unlockMoo(); try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch (e) {} }
+function ensureAudio() { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); loadMoo(); } catch (e) {} }
 function tone(freq, at, dur, type = 'triangle', vol = .22) {
   if (!actx) return;
   const t = actx.currentTime + at, o = actx.createOscillator(), v = actx.createGain();
@@ -537,15 +537,21 @@ const sfxBuzz = () => { tone(150, 0, .28, 'sawtooth', .2); tone(105, .12, .3, 's
 const sfxPhase = () => [523, 659, 784, 1046].forEach((f, i) => tone(f, i * .12, .3));
 const sfxWin = () => [523, 659, 784, 1046, 1318, 1568].forEach((f, i) => tone(f, i * .09, .4, 'triangle', .25));
 const sfxSiren = () => { for (let i = 0; i < 8; i++) tone(i % 2 ? 620 : 900, i * .26, .26, 'square', .11); };
-const mooAudio = new Audio('https://beefgame.vercel.app/mugido.mp3');
-mooAudio.preload = 'auto'; mooAudio.volume = 1;
-let mooUnlocked = false;
-function unlockMoo() {                                     // celulares só liberam <audio> depois de um toque: "aquece" o mugido no primeiro gesto
-  if (mooUnlocked) return; mooUnlocked = true;
-  try { mooAudio.muted = true; const p = mooAudio.play(); const done = () => { mooAudio.pause(); mooAudio.currentTime = 0; mooAudio.muted = false; };
-    if (p && p.then) p.then(done).catch(() => { mooAudio.muted = false; mooUnlocked = false; }); else done(); } catch (e) { mooUnlocked = false; }
+const MOO_URL = 'https://beefgame.vercel.app/mugido.mp3';
+const mooAudio = new Audio(MOO_URL);                       // plano B caso o Web Audio não consiga decodificar
+mooAudio.preload = 'auto';
+let mooBuf = null, mooLoading = false;
+function loadMoo() {                                       // decodifica o mugido uma vez e toca pelo mesmo AudioContext dos outros sons (que já funcionam no celular)
+  if (mooBuf || mooLoading || !actx) return; mooLoading = true;
+  fetch(MOO_URL).then(r => r.arrayBuffer()).then(ab => new Promise((ok, no) => actx.decodeAudioData(ab, ok, no)))
+    .then(b => { mooBuf = b; }).catch(() => { mooLoading = false; });
 }
-function sfxMoo() { try { mooAudio.muted = false; mooAudio.currentTime = 0; mooAudio.play().catch(() => {}); } catch (e) {} }
+function sfxMoo() {
+  try {
+    if (actx && mooBuf) { if (actx.state === 'suspended') actx.resume(); const s = actx.createBufferSource(), g = actx.createGain(); s.buffer = mooBuf; g.gain.value = 1; s.connect(g); g.connect(actx.destination); s.start(); return; }
+    mooAudio.currentTime = 0; mooAudio.play().catch(() => {});
+  } catch (e) {}
+}
 function sfxBad() { sfxMoo(); }                            // erro: toca o mugido (mugido.mp3)
 // vibração do celular (Android/Chrome; iOS Safari não suporta): passo = toque curtinho, acerto = fraca, erro = forte
 function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
