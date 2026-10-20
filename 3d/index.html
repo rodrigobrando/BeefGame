@@ -496,7 +496,7 @@ function proj(lx, ly, h) {
 
 // ---------- Sons ----------
 let actx = null;
-function ensureAudio() { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch (e) {} }
+function ensureAudio() { unlockMoo(); try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch (e) {} }
 function tone(freq, at, dur, type = 'triangle', vol = .22) {
   if (!actx) return;
   const t = actx.currentTime + at, o = actx.createOscillator(), v = actx.createGain();
@@ -517,7 +517,20 @@ function noiseBurst(at, dur, freq, vol) {
   s.connect(f); f.connect(v); v.connect(actx.destination); s.start(t); s.stop(t + dur);
 }
 let lastTick = 0;
-const sfxStep = () => noiseBurst(0, .09, rr(160, 260), .35);
+function thump(freq, at, dur, vol) {                      // pancada grave: seno que cai de frequência
+  if (!actx) return;
+  const t = actx.currentTime + at, o = actx.createOscillator(), v = actx.createGain();
+  o.type = 'sine'; o.frequency.setValueAtTime(freq, t); o.frequency.exponentialRampToValueAtTime(freq * .45, t + dur);
+  v.gain.setValueAtTime(vol, t); v.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(v); v.connect(actx.destination); o.start(t); o.stop(t + dur + .02);
+}
+let hoofSide = 0;
+const sfxStep = () => {                                    // pata batendo no chão: baque grave + estalo do casco (alterna levemente o tom)
+  hoofSide ^= 1;
+  thump(hoofSide ? 130 : 105, 0, .11, .55);
+  noiseBurst(0, .05, rr(900, 1300), .3);
+  noiseBurst(.0, .12, rr(200, 300), .3);
+};
 const sfxTick = () => { const n = performance.now(); if (n - lastTick < 30) return; lastTick = n; tone(1700 + rr(-80, 80), 0, .035, 'square', .07); };
 const sfxOk = () => { tone(660, 0, .12); tone(990, .1, .24); };
 const sfxBuzz = () => { tone(150, 0, .28, 'sawtooth', .2); tone(105, .12, .3, 'sawtooth', .2); };
@@ -525,8 +538,18 @@ const sfxPhase = () => [523, 659, 784, 1046].forEach((f, i) => tone(f, i * .12, 
 const sfxWin = () => [523, 659, 784, 1046, 1318, 1568].forEach((f, i) => tone(f, i * .09, .4, 'triangle', .25));
 const sfxSiren = () => { for (let i = 0; i < 8; i++) tone(i % 2 ? 620 : 900, i * .26, .26, 'square', .11); };
 const mooAudio = new Audio('../mugido.mp3');           // o arquivo fica na pasta do jogo, um nível acima de /3d
-function sfxMoo() { try { mooAudio.currentTime = 0; mooAudio.play().catch(() => {}); } catch (e) {} }
-function sfxBad() { sfxBuzz(); sfxMoo(); }                // erro durante a partida: buzina sintetizada + mugido (também tocado no fim da partida)
+mooAudio.preload = 'auto'; mooAudio.volume = 1;
+let mooUnlocked = false;
+function unlockMoo() {                                     // celulares só liberam <audio> depois de um toque: "aquece" o mugido no primeiro gesto
+  if (mooUnlocked) return; mooUnlocked = true;
+  try { mooAudio.muted = true; const p = mooAudio.play(); const done = () => { mooAudio.pause(); mooAudio.currentTime = 0; mooAudio.muted = false; };
+    if (p && p.then) p.then(done).catch(() => { mooAudio.muted = false; mooUnlocked = false; }); else done(); } catch (e) { mooUnlocked = false; }
+}
+function sfxMoo() { try { mooAudio.muted = false; mooAudio.currentTime = 0; mooAudio.play().catch(() => {}); } catch (e) {} }
+function sfxBad() { sfxMoo(); }                            // erro: toca o mugido (mugido.mp3)
+// vibração do celular (Android/Chrome; iOS Safari não suporta): passo = toque curtinho, acerto = fraca, erro = forte
+function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+const VIB_STEP = 8, VIB_OK = 25, VIB_BAD = [300, 70, 300];
 
 // ---------- Partículas (no mundo: x/y lógicos + altura h em metros; scr = coordenadas de tela) ----------
 function dust(x, y, n = 1, c = '175,135,90') {
@@ -701,7 +724,7 @@ function updateAnimal(a, dt) {
   if (a.dustT <= 0 && a.y > 0) { a.dustT = .07; dust(a.x, a.y - 44, 1); }
   if (a === cur) {
     const si = Math.floor(a.phase * 2 / Math.PI);
-    if (si !== a.stepIdx) { a.stepIdx = si; if (a.y > 0) sfxStep(); }
+    if (si !== a.stepIdx) { a.stepIdx = si; if (a.y > 0) { sfxStep(); buzz(VIB_STEP); } }
     const head = a.y + 52;
     if (a.y > FAN_TOP + 5 && a.y < FAN_BOT && Math.abs(inputAxisX) < .12) a.idle += dt; else a.idle = Math.max(0, a.idle - dt * 2);
     if (a.idle > 1.2) { a.qT -= dt; if (a.qT <= 0) { a.qT = .5; parts.push({ k: 'txt', t: '?', x: a.x + rr(-14, 14), y: head, h: .95, vx: rr(-10, 10), vy: 0, vh: .6, l: 0, m: 1.0 }); } }
@@ -713,7 +736,7 @@ function resolve(a) {
   const ok = a.lane === a.correct;
   a.st = 'exit'; cur = null; resolved++;
   const n = ph.lanes.length, lx = (laneEdge(a.lane, n, FAN_BOT) + laneEdge(a.lane + 1, n, FAN_BOT)) / 2;
-  if (ok) { score += POINTS; hits++; totHits++; sfxOk(); burstOk(a.x, a.y); popText('+' + POINTS, lx, GATE - 30, '#45c64d'); }
+  if (ok) { score += POINTS; hits++; totHits++; sfxOk(); buzz(VIB_OK); burstOk(a.x, a.y); popText('+' + POINTS, lx, GATE - 30, '#45c64d'); }
   else { errs++; totErrs++; sfxBad(); burstBad(a.x, a.y); shake = .3; popText('−1 vida', lx, GATE - 30, '#ee4d3a'); loseLife(); }
   laneFlash = { i: a.lane, ok, t: .7 };
   if (state !== 'playing') return;
@@ -723,7 +746,7 @@ function resetGame() { score = 0; lives = START_LIVES; totHits = 0; totErrs = 0;
 function loseLife() {
   if (lives <= 0) return;
   lives--; heartPulse = 1;
-  try { if (navigator.vibrate) navigator.vibrate(200); } catch (e) {}      // háptico no celular
+  buzz(VIB_BAD);                                           // erro: vibração forte
   if (lives <= 0) startRoulette();
 }
 
