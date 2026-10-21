@@ -1,0 +1,33 @@
+{
+  "teclado": {
+    "zonaMorta": 0, "sensibilidade": 1,
+    "bindings": {
+      "ACAO": ["Key:Space"],
+      "AJUSTE_FINO": ["Key:KeyF", "Key:ShiftLeft"],
+      "AVANCAR": ["Key:Enter", "Key:KeyD"],
+      "VOLTAR": ["Key:Backspace", "Key:Escape"],
+      "PAUSA": ["Key:KeyP"],
+      "NAVEGAR_CIMA": ["Key:ArrowUp", "Key:KeyW"],
+      "NAVEGAR_BAIXO": ["Key:ArrowDown", "Key:KeyS"],
+      "NAVEGAR_ESQ": ["Key:ArrowLeft", "Key:KeyA"],
+      "NAVEGAR_DIR": ["Key:ArrowRight"],
+      "CONFIRMAR": ["Key:Enter", "Key:Space"]
+    }
+  },
+  "gamepad": {
+    "zonaMorta": 0.1, "sensibilidade": 1,
+    "bindings": {
+      "ACAO": ["Pad:7", "Pad:0"],
+      "AJUSTE_FINO": ["Pad:2", "Pad:5"],
+      "AVANCAR": ["Pad:3"],
+      "VOLTAR": ["Pad:1"],
+      "PAUSA": ["Pad:9"],
+      "NAVEGAR_CIMA": ["Pad:12", "PadAxis:1-"],
+      "NAVEGAR_BAIXO": ["Pad:13", "PadAxis:1+"],
+      "NAVEGAR_ESQ": ["Pad:14", "PadAxis:0-"],
+      "NAVEGAR_DIR": ["Pad:15", "PadAxis:0+"],
+      "CONFIRMAR": ["Pad:0"]
+    }
+  },
+  "movimento": { "zonaMorta": 0.08, "sensibilidade": 1, "bindings": {} }
+}

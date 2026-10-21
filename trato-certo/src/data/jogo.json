@@ -1,0 +1,20 @@
+{
+  "vagao": { "capacidadeKg": 10000, "nome": "Vagão misturador" },
+  "currais": ["Curral 01", "Curral 04", "Curral 07", "Curral 12", "Curral 15", "Curral 22"],
+  "faixas": { "perfeito": 1, "bom": 3, "aceitavel": 5 },
+  "rosca": { "vazaoNominal": 40, "aceleracao": 120, "inercia": 0.5, "fracaoFino": 0.1 },
+  "pa": { "capacidadeKg": 800, "taxaEnchimento": 250, "taxaDespejo": 1200, "passoFinoKg": 5, "cadenciaFino": 5 },
+  "balanca": { "resolucaoKg": 1 },
+  "pontuacao": {
+    "base": 1000,
+    "pesoDesvioPct": 12,
+    "tetoDesvioPct": 25,
+    "pesoNutricionalPP": 25,
+    "penalOrdem": 120,
+    "penalErrado": 250,
+    "penalDescarte": 60,
+    "penalMisturaMax": 200,
+    "bonusTempoMax": 60,
+    "estrelas": { "tres": 900, "duas": 650 }
+  }
+}

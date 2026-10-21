@@ -1,0 +1,17 @@
+{
+  "niveis": [
+    { "id": "n1", "nome": "1 · Tutorial", "descricao": "Barra-guia mostra quando soltar. Balança quase sem atraso.",
+      "cabecas": 100, "fracaoTrato": 1, "guia": true, "lagTau": 0.05, "ruido": 0, "inercia": 0.3, "fatorVazao": 1,
+      "fatorTolerancia": 1.5, "distratores": 0, "listaOrdem": "carga", "misturaSeg": 5, "tempoAlvo": 90 },
+    { "id": "n2", "nome": "2 · Campo", "descricao": "Sem barra-guia. Atraso da balança e leve oscilação.",
+      "cabecas": 250, "fracaoTrato": 0.35, "guia": false, "lagTau": 0.2, "ruido": 0.6, "inercia": 0.5, "fatorVazao": 1.5,
+      "fatorTolerancia": 1, "distratores": 0, "listaOrdem": "tabela", "misturaSeg": 7, "tempoAlvo": 110 },
+    { "id": "n3", "nome": "3 · Fazenda grande", "descricao": "Mais cabeças, mais atraso, oscilação forte e ingredientes enganosos.",
+      "cabecas": 600, "fracaoTrato": 0.35, "guia": false, "lagTau": 0.35, "ruido": 1.8, "inercia": 0.8, "fatorVazao": 2.5,
+      "fatorTolerancia": 0.75, "distratores": 2, "listaOrdem": "embaralhada", "misturaSeg": 9, "tempoAlvo": 140 },
+    { "id": "desafio", "nome": "★ Desafio", "descricao": "Dieta, ordem de carga e lote sorteados. Vale ranking.",
+      "cabecas": 0, "fracaoTrato": 0.35, "guia": false, "lagTau": 0.3, "ruido": 1.2, "inercia": 0.7, "fatorVazao": 2,
+      "fatorTolerancia": 0.85, "distratores": 1, "listaOrdem": "embaralhada", "misturaSeg": 8, "tempoAlvo": 130,
+      "sorteio": { "cabecasMin": 200, "cabecasMax": 900, "fracoes": [0.25, 0.35, 0.4] } }
+  ]
+}

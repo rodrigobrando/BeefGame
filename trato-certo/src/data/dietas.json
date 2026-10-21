@@ -1,0 +1,33 @@
+{
+  "dietas": [
+    {
+      "id": "adaptacao",
+      "nome": "Adaptação",
+      "consumoMSCabDia": 8,
+      "ingredientes": [
+        { "id": "pre-confinamento", "nome": "PRE CONFINAMENTO 17 08 26", "ms": 87.59, "inclMS": 38, "inclMO": 20.3559, "ordemCarga": 4, "modoCarga": "rosca", "vazaoRosca": 60, "cor": "#c98a3b", "icone": "🌾" },
+        { "id": "soja-gorda", "nome": "SOJA GORDA", "ms": 92, "inclMS": 15, "inclMO": 7.6501, "ordemCarga": 5, "modoCarga": "rosca", "vazaoRosca": 40, "cor": "#d9c24a", "icone": "🫘" },
+        { "id": "polpa-citrica", "nome": "POLPA CITRICA", "ms": 19, "inclMS": 8, "inclMO": 19.7560, "ordemCarga": 3, "modoCarga": "pa", "cor": "#e8892b", "icone": "🍊" },
+        { "id": "bagaco-cana", "nome": "BAGAÇO CANA", "ms": 50, "inclMS": 14, "inclMO": 13.1377, "ordemCarga": 2, "modoCarga": "pa", "cor": "#9aa55b", "icone": "🎋" },
+        { "id": "silagem-milho", "nome": "SILAGEM DE MILHO", "ms": 30, "inclMS": 25, "inclMO": 39.1003, "ordemCarga": 1, "modoCarga": "pa", "cor": "#5f9b3c", "icone": "🌽" }
+      ]
+    },
+    {
+      "id": "terminacao",
+      "nome": "Terminação",
+      "consumoMSCabDia": 8,
+      "ingredientes": [
+        { "id": "farelo-amendoim", "nome": "FARELO DE AMENDOIM", "ms": 92, "inclMS": 10, "inclMO": 5.7278, "ordemCarga": 5, "modoCarga": "rosca", "vazaoRosca": 40, "cor": "#b7793f", "icone": "🥜" },
+        { "id": "bagaco-cana", "nome": "BAGAÇO CANA", "ms": 50, "inclMS": 12, "inclMO": 12.6471, "ordemCarga": 2, "modoCarga": "pa", "cor": "#9aa55b", "icone": "🎋" },
+        { "id": "silagem-milho", "nome": "SILAGEM DE MILHO", "ms": 30, "inclMS": 15, "inclMO": 26.3480, "ordemCarga": 1, "modoCarga": "pa", "cor": "#5f9b3c", "icone": "🌽" },
+        { "id": "polpa-citrica", "nome": "POLPA CITRICA", "ms": 19, "inclMS": 8, "inclMO": 22.1878, "ordemCarga": 3, "modoCarga": "pa", "cor": "#e8892b", "icone": "🍊" },
+        { "id": "pre-confinamento", "nome": "PRE CONFINAMENTO 17 08 26", "ms": 87.59, "inclMS": 55, "inclMO": 33.0892, "ordemCarga": 4, "modoCarga": "rosca", "vazaoRosca": 60, "cor": "#c98a3b", "icone": "🌾" }
+      ]
+    }
+  ],
+  "distratores": [
+    { "id": "milho-moido", "nome": "MILHO MOÍDO", "ms": 88, "modoCarga": "rosca", "cor": "#e9d05a", "icone": "🌽" },
+    { "id": "cama-frango", "nome": "CAMA DE FRANGO", "ms": 78, "modoCarga": "pa", "cor": "#8a6a4a", "icone": "🐔" },
+    { "id": "casca-soja", "nome": "CASCA DE SOJA", "ms": 90, "modoCarga": "rosca", "cor": "#b8a47a", "icone": "🫛" }
+  ]
+}

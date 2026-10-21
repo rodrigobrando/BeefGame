@@ -1,0 +1,11 @@
+{
+  "name": "Trato Certo",
+  "short_name": "Trato Certo",
+  "description": "Carregue o vagão misturador no peso certo da dieta.",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#2f5a2c",
+  "theme_color": "#2f5a2c",
+  "icons": [{ "src": "icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
