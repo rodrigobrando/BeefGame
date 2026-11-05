@@ -55,6 +55,9 @@
   .chip b { display: block; color: #fff; padding: 4px 2px; font-size: 14px; letter-spacing: .5px; }
   .chip span { display: block; padding: 5px 4px; font-weight: 700; line-height: 1.25; }
   .stats { display: flex; justify-content: center; gap: 22px; margin: 12px 0; font-weight: 700; flex-wrap: wrap; }
+  .prize { margin: 12px 0; padding: 12px; border-radius: 12px; background: rgba(255,216,74,.18); border: 2px solid #ffd84a; font-size: 20px; }
+  .prize.none { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.3); font-size: 16px; }
+  .prize small { display: block; margin-top: 6px; font-size: 13px; opacity: .85; }
   .stats i { display: block; font: 800 28px "Trebuchet MS", sans-serif; font-style: normal; }
   button.go {
     margin-top: 10px; padding: 12px 30px; font: 800 20px "Trebuchet MS", sans-serif; color: #fff; cursor: pointer;
@@ -123,7 +126,7 @@ function fitTxt(g, s, x, y, maxW, size, color, align = 'center') {
 }
 
 // ---------- Entrada ----------
-let inputAxisX = 0, keyDir = 0, touchDir = 0;
+let inputAxisX = 0, keyDir = 0, touchDir = 0, wheelDir = 0;
 const keysDown = new Set();
 const TILT_MAX = 30, TILT_DEAD = 2;                    // gamma limitado a -30°..+30° => inputAxisX -1..+1
 let accelAxis = 0, accelStamp = -1e9, sensorSeen = false, sensorBound = false;
@@ -150,7 +153,8 @@ window.enableTilt = enableTilt;
 // Prioridade: teclado > toque/arrasto > sensor. O sensor é amortecido (lerp exponencial) para não tremer.
 function updateInput(dt) {
   const accelOn = performance.now() - accelStamp < 500;
-  const manual = keyDir || (accelOn ? 0 : touchDir);
+  wheelDir *= Math.exp(-7 * dt); if (Math.abs(wheelDir) < .02) wheelDir = 0;
+  const manual = keyDir || (accelOn ? 0 : (touchDir || wheelDir));
   if (manual) inputAxisX += clamp(manual - inputAxisX, -5 * dt, 5 * dt);
   else if (accelOn) inputAxisX += (accelAxis - inputAxisX) * (1 - Math.exp(-14 * dt));
   else inputAxisX += clamp(-inputAxisX, -6 * dt, 6 * dt);
@@ -169,7 +173,7 @@ addEventListener('keyup', e => {
   if (k === 'ArrowRight' || k === 'd' || k === 'D') keysDown.delete('R');
   keyDir = (keysDown.has('R') ? 1 : 0) - (keysDown.has('L') ? 1 : 0);
 });
-addEventListener('blur', () => { keysDown.clear(); keyDir = 0; touchDir = 0; });
+addEventListener('blur', () => { keysDown.clear(); keyDir = 0; touchDir = 0; wheelDir = 0; });
 
 // ---------- Fases ----------
 function weightAway(cut, lo, hi, gap) { let w; do { w = rnd(lo, hi); } while (Math.abs(w - cut) < gap); return w; }
@@ -748,12 +752,12 @@ function resolve(a) {
   if (state !== 'playing') return;
   if (resolved >= ph.count) finishTimer = 1.1; else spawnTimer = .35;
 }
-function resetGame() { score = 0; lives = START_LIVES; totHits = 0; totErrs = 0; stress = 0; roulette = null; heartPulse = 0; flashRed = 0; }
+function resetGame() { prize = null; score = 0; lives = START_LIVES; totHits = 0; totErrs = 0; stress = 0; roulette = null; heartPulse = 0; flashRed = 0; }
 function loseLife() {
   if (lives <= 0) return;
   lives--; heartPulse = 1;
   buzz(VIB_BAD);                                           // erro: vibração forte
-  if (lives <= 0) startRoulette();
+  if (lives <= 0) startRoulette(false);
 }
 
 function update(dt) {
@@ -805,17 +809,59 @@ function drawOverlay() {
   if (state === 'playing') drawHud(g);
 }
 
-// ---------- Roleta "Tudo ou Nada" ----------
+// ---------- Roleta de brindes ----------
 const SA = TAU / 8, RCY = 450, RR = 200;
 const SLICES = [
-  { v: 1.5, t: 'x1.5', c: '#3fa84a' }, { v: 0, c: '#c62d24' },
-  { v: 2,   t: 'x2',   c: '#f2c230' }, { v: 0, c: '#1b1b1f' },
-  { v: 3,   t: 'x3',   c: '#2f8f3a' }, { v: 0, c: '#c62d24' },
-  { v: 5,   t: 'x5',   c: '#e39b17' }, { v: 2, t: 'x2', c: '#4fbf5a' },
+  { v: 1.5, t: 'CONSOLAÇÃO', prize: 'Prêmio Consolação', k: 'gift', c: '#3fa84a' }, { v: 0, c: '#c62d24' },
+  { v: 2,   t: 'BRONZE',      prize: 'Prêmio Bronze',     k: 'bronze', c: '#b8692e' }, { v: 0, c: '#1b1b1f' },
+  { v: 3,   t: 'PRATA',       prize: 'Prêmio Prata',      k: 'silver', c: '#8d98a5' }, { v: 0, c: '#c62d24' },
+  { v: 5,   t: 'OURO',        prize: 'Prêmio Ouro',       k: 'gold', c: '#e39b17' }, { v: 2, t: 'BRONZE', prize: 'Prêmio Bronze', k: 'bronze', c: '#b8692e' },
 ];
-function startRoulette() {
+let prize = null;   // fatia sorteada na roleta (null = sem brinde)
+
+// ---------- Estoque de brindes (localStorage, 1 aparelho) ----------
+// Cada brinde é liberado aos poucos ao longo dos dias/horas do evento. Se o brinde sorteado
+// não tem unidade liberada, a chance dele vai para a caveira. O que sobra de um dia acumula no seguinte.
+const STOCK_KEY = 'beefgame.brindes.v1';
+const PRIZE_TOTAL = { gold: 10, silver: 6, bronze: 20, gift: 100 };
+const PRIZE_NAME = { gold: 'Ouro', silver: 'Prata', bronze: 'Bronze', gift: 'Consolação' };
+const EVENT_DAYS = 3;
+const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+function stockLoad() {
+  let st = null;
+  try { st = JSON.parse(localStorage.getItem(STOCK_KEY)); } catch (e) {}
+  if (!st || !st.given) st = { start: todayStr(), h0: 9, h1: 18, given: { gold: 0, silver: 0, bronze: 0, gift: 0 }, log: [] };
+  return st;
+}
+function stockSave(st) { try { localStorage.setItem(STOCK_KEY, JSON.stringify(st)); } catch (e) {} }
+// fração do evento já decorrida (0..1): dias completos + parte do horário do dia atual
+function eventProgress(st, now = new Date()) {
+  const d0 = new Date(st.start + 'T00:00:00'), day = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - d0) / 864e5);
+  if (day < 0) return 0;
+  if (day >= EVENT_DAYS) return 1;
+  const h = now.getHours() + now.getMinutes() / 60, f = Math.min(1, Math.max(0, (h - st.h0) / Math.max(1, st.h1 - st.h0)));
+  return (day + f) / EVENT_DAYS;
+}
+function stockInfo(st = stockLoad()) {
+  const p = eventProgress(st), out = {};
+  for (const k in PRIZE_TOTAL) {
+    const released = Math.min(PRIZE_TOTAL[k], Math.round(PRIZE_TOTAL[k] * p)), given = st.given[k] || 0;
+    out[k] = { total: PRIZE_TOTAL[k], released, given, avail: Math.max(0, Math.min(released, PRIZE_TOTAL[k]) - given) };
+  }
+  return { st, p, k: out };
+}
+// escolhe a fatia: peso = nº de fatias do brinde (se liberado); o que não está liberado vira caveira
+function drawSlice() {
+  const { st, k } = stockInfo(), w = SLICES.map(sl => (sl.k ? (k[sl.k].avail > 0 ? 1 : 0) : 1));
+  let r = Math.random() * w.reduce((a, b) => a + b, 0), idx = 0;
+  for (; idx < w.length - 1; idx++) { r -= w[idx]; if (r < 0) break; }
+  const sl = SLICES[idx];
+  if (sl.k) { st.given[sl.k]++; st.log.push([Date.now(), sl.k]); if (st.log.length > 500) st.log.shift(); stockSave(st); }
+  return idx;
+}
+function startRoulette(won = false) {
   state = 'roulette'; hide(); cur = null; touchDir = 0; laneFlash = null; stress = 0;
-  roulette = { st: 'ready', th: -Math.PI / 2 - SA * .5, th0: 0, D: 0, t: 0, ptr: 0, target: 0, resT: 0, from: Math.round(score), shown: Math.round(score) };
+  roulette = { won, st: 'ready', th: -Math.PI / 2 - SA * .5, th0: 0, D: 0, t: 0, ptr: 0, target: 0, resT: 0, from: Math.round(score), shown: Math.round(score) };
   roulette.lastIdx = Math.floor((-Math.PI / 2 - roulette.th) / SA);
   sfxBuzz();
 }
@@ -823,7 +869,7 @@ function spinRoulette() {
   const r = roulette;
   if (state !== 'roulette' || !r || r.st !== 'ready') return;
   ensureAudio();
-  r.target = rnd(0, SLICES.length - 1);
+  r.target = drawSlice();
   const thf = -Math.PI / 2 - (r.target + .5) * SA + rr(-.35, .35) * SA;
   r.th0 = r.th; r.D = (((thf - r.th) % TAU) + TAU) % TAU + TAU * 6;
   r.st = 'spin'; r.t = 0;
@@ -841,15 +887,16 @@ function updateRoulette(dt) {
     if (r.t >= T) finishSpin();
   } else if (r.st === 'result') {
     r.resT += dt;
-    r.shown = Math.round(lerp(r.from, score, clamp(r.resT, 0, 1)));
-    if (r.resT > 3.2) { r.st = 'done'; showGameOver(false); }
+    r.shown = Math.round(score);
+    if (r.resT > 3.2) { r.st = 'done'; showGameOver(r.won); }
   }
 }
 function finishSpin() {
   const r = roulette, s = SLICES[r.target];
   r.st = 'result'; r.resT = 0; r.from = Math.round(score);
-  if (s.v === 0) { score = 0; sfxSiren(); flashRed = 2; shake = .6; for (let i = 0; i < 4; i++) burstBad(rr(180, 540), rr(300, 560), true); }
-  else { score = Math.round(score * s.v); sfxWin(); for (let i = 0; i < 5; i++) burstOk(rr(160, 560), rr(280, 560), true); }
+  prize = s.v > 0 ? s : null;
+  if (s.v === 0) { sfxSiren(); flashRed = 2; shake = .6; for (let i = 0; i < 4; i++) burstBad(rr(180, 540), rr(300, 560), true); }
+  else { sfxWin(); for (let i = 0; i < 5; i++) burstOk(rr(160, 560), rr(280, 560), true); }
 }
 function skull(x, s) {
   x.fillStyle = '#f4efe4'; x.beginPath(); x.arc(0, -4 * s, 17 * s, 0, TAU); x.fill();
@@ -859,11 +906,30 @@ function skull(x, s) {
   x.strokeStyle = '#111'; x.lineWidth = 1.5 * s;
   for (const dx of [-4, 0, 4]) { x.beginPath(); x.moveTo(dx * s, 11 * s); x.lineTo(dx * s, 18 * s); x.stroke(); }
 }
+function prizeIcon(x, k, s) {
+  x.save(); x.scale(s, s); x.lineJoin = 'round'; x.lineWidth = 3; x.strokeStyle = 'rgba(40,20,5,.85)';
+  if (k === 'gift') {
+    x.fillStyle = '#fff'; rrect(x, -17, -6, 34, 26, 3); x.fill(); x.stroke();
+    x.fillStyle = '#e8383d'; x.fillRect(-3.5, -6, 7, 26); rrect(x, -20, -15, 40, 11, 3); x.fill(); x.stroke();
+    x.beginPath(); x.moveTo(0, -15); x.bezierCurveTo(-18, -34, -22, -12, 0, -15); x.bezierCurveTo(18, -34, 22, -12, 0, -15); x.fill(); x.stroke();
+  } else {
+    const c = { gold: ['#ffd84a', '#c9971a'], silver: ['#eef2f6', '#8d98a5'], bronze: ['#e39a58', '#9a5a22'] }[k];
+    x.fillStyle = '#d6322b';
+    x.beginPath(); x.moveTo(-14, -26); x.lineTo(-2, -26); x.lineTo(6, 2); x.lineTo(-6, 2); x.closePath(); x.fill(); x.stroke();
+    x.beginPath(); x.moveTo(14, -26); x.lineTo(2, -26); x.lineTo(-6, 2); x.lineTo(6, 2); x.closePath(); x.fill(); x.stroke();
+    x.fillStyle = c[0]; x.beginPath(); x.arc(0, 12, 19, 0, TAU); x.fill(); x.stroke();
+    x.strokeStyle = c[1]; x.lineWidth = 2.5; x.beginPath(); x.arc(0, 12, 13, 0, TAU); x.stroke();
+    x.fillStyle = c[1]; x.beginPath();
+    for (let i = 0; i < 10; i++) { const r = i % 2 ? 4.5 : 10, a = -Math.PI / 2 + i * Math.PI / 5; x.lineTo(Math.cos(a) * r, 12 + Math.sin(a) * r); }
+    x.closePath(); x.fill();
+  }
+  x.restore();
+}
 function drawRoulette(x) {
   const r = roulette, res = r.st === 'result' || r.st === 'done', win = SLICES[r.target].v > 0;
   x.fillStyle = 'rgba(10,5,0,.74)'; x.fillRect(HL, HT, HR - HL, HB - HT);
   if (flashRed > 0) { x.fillStyle = `rgba(230,30,20,${flashRed * .16 * (.6 + .4 * Math.sin(performance.now() / 90))})`; x.fillRect(HL, HT, HR - HL, HB - HT); }
-  txt(x, 'TUDO OU NADA', CX, 64, 46, '#ffd84a', 'center', '#5e2a10');
+  txt(x, 'ROLETA DE BRINDES', CX, 64, 40, '#ffd84a', 'center', '#5e2a10');
   panel(x, 150, 84, 420, 104);
   txt(x, 'PONTUAÇÃO ACUMULADA', CX, 112, 14, '#f3d9a4', 'center');
   txt(x, String(r.shown), CX, 168, 52, res ? (win ? '#9dff8a' : '#ff6a4d') : '#fff', 'center');
@@ -876,7 +942,7 @@ function drawRoulette(x) {
     x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, RR, i * SA, (i + 1) * SA); x.closePath();
     x.fillStyle = s.c; x.fill(); x.strokeStyle = 'rgba(255,255,255,.55)'; x.lineWidth = 3; x.stroke();
     x.save(); x.rotate((i + .5) * SA); x.translate(RR * .66, 0); x.rotate(Math.PI / 2);
-    if (s.v) txt(x, s.t, 0, 13, 38, '#fff', 'center', 'rgba(0,0,0,.65)');
+    if (s.v) { x.rotate(-Math.PI / 2); x.translate(0, -2); x.rotate(Math.PI / 2); prizeIcon(x, s.k, 1.25); }
     else { skull(x, 1.15); txt(x, '0', 0, 46, 24, '#fff', 'center', 'rgba(0,0,0,.7)'); }
     x.restore();
   });
@@ -909,7 +975,9 @@ function drawRoulette(x) {
     txt(x, 'Girando…', CX, 780, 32, '#fff0cf', 'center', '#3d230d');
   } else {
     const s = SLICES[r.target];
-    txt(x, win ? `${s.t.toUpperCase()}!  PONTOS MULTIPLICADOS` : 'FALÊNCIA! PERDEU TUDO', CX, 780, win ? 28 : 34, win ? '#9dff8a' : '#ff6a4d', 'center', '#2b0d08');
+    if (win) { for (const dx of [-250, 250]) { x.save(); x.translate(CX + dx, 770); prizeIcon(x, s.k, 1.1); x.restore(); } }
+    else for (const dx of [-250, 250]) { x.save(); x.translate(CX + dx, 770); skull(x, 1.2); x.restore(); }
+    txt(x, win ? `${s.prize.toUpperCase()}!` : 'NÃO FOI DESTA VEZ…', CX, 780, 32, win ? '#9dff8a' : '#ff6a4d', 'center', '#2b0d08');
   }
   drawFx(x);
 }
@@ -926,7 +994,7 @@ function showMenu() {
     <p><b>📱 Incline o celular</b> para a esquerda ou direita (segure em pé).</p>
     <p class="sub">Sem sensor ou no computador: <b>arraste o dedo</b> na tela ou use <kbd>←</kbd> <kbd>→</kbd> / <b>A</b> <b>D</b>.</p>
     <p>Confira <b>raça</b> e <b>peso</b> com a placa de cada piquete. Acerto: <b>+100</b> pontos.</p>
-    <p>Você tem <b>3 vidas ❤</b>. Piquete errado, boi travado na cerca ou tempo estourado custam <b>1 vida</b>. Zerou? Rola a <b>roleta Tudo ou Nada</b> com a sua pontuação!</p>
+    <p>Você tem <b>3 vidas ❤</b>. Piquete errado, boi travado na cerca ou tempo estourado custam <b>1 vida</b>. Ao final (vencendo ou perdendo), gire a <b>roleta de brindes</b>: Ouro, Prata, Bronze ou Consolação!</p>
     <button class="go" id="go">Iniciar Manejo</button>`);
   // enableTilt() é chamado primeiro, ainda dentro do clique: o iOS exige isso para liberar o sensor
   $('go').onclick = async () => {
@@ -955,12 +1023,13 @@ function endPhase() {
       <div class="stats"><div><i>${hits}</i>acertos</div><div><i>${errs}</i>erros</div><div><i>${Math.round(score)}</i>pontos</div><div><i>${lives}</i>vidas</div></div>
       <button class="go" id="go">Próxima fase</button>`);
     $('go').onclick = () => showIntro(phaseIdx + 1);
-  } else showGameOver(true);
+  } else startRoulette(true);
 }
 function showGameOver(won) {
   state = 'gameover'; sfxMoo();
   show(`<h1>${won ? 'Lote finalizado! 🏆' : 'Game Over'}</h1>
     <p class="sub">${won ? 'Você separou o gado das 3 fases com vidas de sobra.' : 'As 3 vidas acabaram.'}</p>
+    <p class="prize ${prize ? '' : 'none'}">${prize ? `<span style="font-size:44px;display:block">${{gift:'🎁',bronze:'🥉',silver:'🥈',gold:'🥇'}[prize.k]}</span>Você ganhou o <b>${prize.prize}</b>!<small>Mostre esta tela para retirar o brinde.</small>` : '<span style="font-size:44px;display:block">💀</span>Sem brinde desta vez. Jogue de novo!'}</p>
     <div class="stats"><div><i>${Math.round(score)}</i>pontuação final</div><div><i>${totHits}</i>acertos</div><div><i>${totErrs}</i>erros</div></div>
     <button class="go" id="go">Jogar Novamente</button>`);
   $('go').onclick = () => { ensureAudio(); resetGame(); showIntro(0); };
@@ -985,6 +1054,15 @@ hud.addEventListener('pointerdown', e => {
 hud.addEventListener('pointermove', e => { if (pressed) setTouch(e); });
 for (const ev of ['pointerup', 'pointercancel']) hud.addEventListener(ev, () => { pressed = false; touchDir = 0; });
 
+// Trackpad: deslizar com dois dedos (horizontal, ou vertical se não houver deslocamento lateral) conduz o boi
+addEventListener('wheel', e => {
+  if (state !== 'playing') return;
+  e.preventDefault();
+  const d = Math.abs(e.deltaX) >= Math.abs(e.deltaY) ? e.deltaX : -e.deltaY;
+  const px = e.deltaMode === 1 ? d * 16 : d;
+  wheelDir = clamp(wheelDir + px / 60, -1, 1);
+}, { passive: false });
+
 // Nível de bolha (HTML): a bolha acompanha inputAxisX, o número mostra os graus equivalentes
 const levelEl = $('level'), bubbleEl = $('bubble'), degEl = $('deg');
 let lastDeg = null;
@@ -1007,7 +1085,26 @@ function frame(ts) {
   requestAnimationFrame(frame);
 }
 resize();
+// ---------- Admin do estoque (abrir com ?admin) ----------
+function showAdmin() {
+  state = 'admin';
+  const { st, p, k } = stockInfo();
+  show(`<h2>Estoque de brindes</h2>
+    <p class="sub">Evento: ${st.start} · ${EVENT_DAYS} dias · ${String(st.h0).padStart(2, '0')}h–${String(st.h1).padStart(2, '0')}h · ${Math.round(p * 100)}% decorrido</p>
+    <table style="margin:8px auto;border-collapse:collapse;font-size:14px;text-align:center">
+      <tr style="opacity:.7"><td style="padding:3px 10px"></td><td style="padding:3px 10px">entregues</td><td style="padding:3px 10px">liberados</td><td style="padding:3px 10px">restam</td></tr>
+      ${Object.keys(k).map(n => `<tr><td style="padding:3px 10px;text-align:left"><b>${PRIZE_NAME[n]}</b></td><td>${k[n].given}/${k[n].total}</td><td>${k[n].released}</td><td>${k[n].total - k[n].given}</td></tr>`).join('')}
+    </table>
+    <p class="sub">Horário diário: <input id="h0" type="number" min="0" max="23" value="${st.h0}" style="width:44px"> às <input id="h1" type="number" min="1" max="24" value="${st.h1}" style="width:44px"></p>
+    <button class="go" id="save">Salvar horário</button>
+    <button class="go" id="reset" style="background:#b8352b">Reiniciar evento (zera tudo)</button>
+    <button class="go" id="back">Voltar ao jogo</button>`);
+  $('save').onclick = () => { const s2 = stockLoad(); s2.h0 = Math.max(0, Math.min(23, +$('h0').value || 9)); s2.h1 = Math.max(s2.h0 + 1, Math.min(24, +$('h1').value || 18)); stockSave(s2); showAdmin(); };
+  $('reset').onclick = () => { if (!confirm('Zerar a contagem de brindes e começar o evento hoje?')) return; const s2 = stockLoad(); s2.start = todayStr(); s2.given = { gold: 0, silver: 0, bronze: 0, gift: 0 }; s2.log = []; stockSave(s2); showAdmin(); };
+  $('back').onclick = () => showMenu();
+}
 showMenu();
+if (/[?&]admin\b/.test(location.search)) showAdmin();
 requestAnimationFrame(frame);
 </script>
 </body>
